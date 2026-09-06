@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess
-import time 
+import time
 import re
 from datetime import datetime
 
@@ -9,8 +9,8 @@ from datetime import datetime
 ADB = "/usr/bin/adb"
 INTERVAL = 30
 
+
 def adb(device, *args):
-    """Run an ADB command for a specific device."""
     cmd = [ADB, "-s", device, *args]
 
     try:
@@ -20,74 +20,172 @@ def adb(device, *args):
             text=True,
             timeout=10
         )
+
         return result.stdout.strip()
-    except Exception as e:
-        return f"ERROR: {e}"
+
+    except Exception:
+        return ""
+
 
 def get_devices():
-    """Return connected ADB devices."""
-    output = subprocess.run(
+
+    result = subprocess.run(
         [ADB, "devices"],
         capture_output=True,
         text=True
-    ).stdout
+    )
 
     devices = []
 
-    for line in output.splitlines():
+    for line in result.stdout.splitlines():
+
         if "\tdevice" in line:
+
             serial = line.split("\t")[0]
+
             devices.append(serial)
 
     return devices
 
 
-def get_prop(device, prop):
-    return adb(device, "shell", "getprop", prop)
+def prop(device, name):
+
+    return adb(
+        device,
+        "shell",
+        "getprop",
+        name
+    )
+
+
+def get_model(device):
+
+    return prop(
+        device,
+        "ro.product.model"
+    )
+
+
+def get_android(device):
+
+    return prop(
+        device,
+        "ro.build.version.release"
+    )
+
+
+def get_operator(device):
+
+    value = prop(
+        device,
+        "gsm.operator.alpha"
+    )
+
+    return value.strip(" ,")
+
+
+def get_network(device):
+
+    value = prop(
+        device,
+        "gsm.network.type"
+    )
+
+    return value
 
 
 def get_battery(device):
-    output = adb(device, "shell", "dumpsys", "battery")
 
-    level = re.search(r"level:\s*(\d+)", output)
-    temp = re.search(r"temperature:\s*(\d+)", output)
-    status = re.search(r"status:\s*(\d+)", output)
-
-    level = int(level.group(1)) if level else None
-
-    # Android reports battery temperature in tenths of °C
-    temp = int(temp.group(1)) / 10 if temp else None
-
-    status_codes = {
-        1: "UNKNOWN",
-        2: "CHARGING",
-        3: "DISCHARGING",
-        4: "NOT_CHARGING",
-        5: "FULL"
-    }
-
-    status = status_codes.get(
-        int(status.group(1)) if status else 0,
-        "UNKNOWN"
+    output = adb(
+        device,
+        "shell",
+        "dumpsys",
+        "battery"
     )
 
-    return level, temp, status
+    level = None
+    temperature = None
+    status = "UNKNOWN"
 
-def get_interface_data(device, interface="rmnet0"):
-    """Get RX/TX byte counters for cellular interface."""
+    match = re.search(
+        r"level:\s*(\d+)",
+        output
+    )
+
+    if match:
+        level = int(match.group(1))
+
+    match = re.search(
+        r"temperature:\s*(\d+)",
+        output
+    )
+
+    if match:
+        temperature = int(match.group(1)) / 10
+
+    match = re.search(
+        r"status:\s*(\d+)",
+        output
+    )
+
+    if match:
+
+        status_codes = {
+            1: "UNKNOWN",
+            2: "CHARGING",
+            3: "DISCHARGING",
+            4: "NOT_CHARGING",
+            5: "FULL"
+        }
+
+        status = status_codes.get(
+            int(match.group(1)),
+            "UNKNOWN"
+        )
+
+    return level, temperature, status
+
+
+def get_private_ip(device):
+
+    output = adb(
+        device,
+        "shell",
+        "ip",
+        "addr",
+        "show",
+        "dev",
+        "rmnet0"
+    )
+
+    match = re.search(
+        r"inet\s+(\d+\.\d+\.\d+\.\d+)",
+        output
+    )
+
+    if match:
+        return match.group(1)
+
+    return "N/A"
+
+
+def get_traffic(device):
+
+    rx_path = "/sys/class/net/rmnet0/statistics/rx_bytes"
+    tx_path = "/sys/class/net/rmnet0/statistics/tx_bytes"
 
     rx = adb(
         device,
         "shell",
         "cat",
-        f"/sys/class/net/{interface}/statistics/rx_bytes"
+        rx_path
     )
 
     tx = adb(
         device,
         "shell",
         "cat",
-        f"/sys/class/net/{interface}/statistics/tx_bytes"
+        tx_path
     )
 
     try:
@@ -102,173 +200,340 @@ def get_interface_data(device, interface="rmnet0"):
 
     return rx, tx
 
-def get_private_ip(device, interface="rmnet0"):
-    output = adb(
-        device,
-        "shell",
-        "ip",
-        "-4",
-        "addr",
-        "show",
-        "dev",
-        interface
-    )
 
-    match = re.search(r"inet\s+(\d+\.\d+\.\d+\.\d+)", output)
-
-    return match.group(1) if match else "N/A"
-
-
-def get_public_ip(device):
-    """Get public IP using the phone's own mobile connection."""
+def get_telephony(device):
 
     output = adb(
-        device,
-        "shell",
-        "curl",
-        "-4",
-        "-s",
-        "--max-time",
-        "5",
-        "https://api.ipify.org"
-    )
-
-    if re.match(r"^\d+\.\d+\.\d+\.\d+$", output):
-        return output
-
-    return "N/A"
-
-def get_network_type(device):
-    return get_prop(device, "gsm.network.type")
-
-def get_operator(device):
-    return get_prop(device, "gsm.operator.alpha")
-
-def get_android_version(device):
-    return get_prop(device, "ro.build.version.release")
-
-def get_model(device):
-    return get_prop(device, "ro.product.model")
-
-def get_cell_info(device):
-    """
-     Capture the raw cellular registry information.
-
-    We keep the raw output for now because older Samsung/Android
-    versions expose different fields.
-    """
-
-    return adb(
         device,
         "shell",
         "dumpsys",
         "telephony.registry"
     )
 
+    return output
+
+
+def parse_cellular(output):
+
+    data = {
+        "rsrp": None,
+        "rsrq": None,
+        "rssnr": None,
+        "cqi": None,
+        "band": None,
+        "earfcn": None,
+        "pci": None,
+        "ca": None
+    }
+
+    # SignalStrengthLte
+
+    match = re.search(
+        r"CellSignalStrengthLte:\s*"
+        r"rssi=(-?\d+)\s+"
+        r"rsrp=(-?\d+)\s+"
+        r"rsrq=(-?\d+)\s+"
+        r"rssnr=(-?\d+).*?"
+        r"cqi=(-?\d+)",
+        output
+    )
+
+    if match:
+
+        data["rsrp"] = int(match.group(2))
+        data["rsrq"] = int(match.group(3))
+        data["rssnr"] = int(match.group(4))
+        data["cqi"] = int(match.group(5))
+
+    # EARFCN
+
+    match = re.search(
+        r"mEarfcn=(\d+)",
+        output
+    )
+
+    if match:
+        data["earfcn"] = int(match.group(1))
+
+    # Band
+
+    match = re.search(
+        r"mBands=\[([^\]]+)\]",
+        output
+    )
+
+    if match:
+
+        bands = match.group(1)
+
+        data["band"] = bands
+
+    # PCI
+
+    match = re.search(
+        r"mPci=(\d+)",
+        output
+    )
+
+    if match:
+        data["pci"] = int(match.group(1))
+
+    # Carrier aggregation
+
+    if "isUsingCarrierAggregation=true" in output:
+        data["ca"] = True
+
+    elif "isUsingCarrierAggregation=false" in output:
+        data["ca"] = False
+
+    return data
+
+
 def format_bytes(value):
+
     if value is None:
         return "N/A"
 
-    units = ["B", "KB", "MB", "GB", "TB"]
-
     value = float(value)
 
+    units = [
+        "B",
+        "KB",
+        "MB",
+        "GB",
+        "TB"
+    ]
+
     for unit in units:
+
         if value < 1024:
-            return f"{value:.1f} {unit}"
+            return f"{value:.2f} {unit}"
+
         value /= 1024
 
-    return f"{value:.1f} PB"
+    return f"{value:.2f} PB"
+
 
 def collect(device):
-    model = get_model(device)
-    android = get_android_version(device)
-    operator = get_operator(device)
-    network = get_network_type(device)
 
     battery, temperature, charging = get_battery(device)
 
-    private_ip = get_private_ip(device)
-    public_ip = get_public_ip(device)
+    traffic_rx, traffic_tx = get_traffic(device)
 
-    rx, tx = get_interface_data(device)
+    telephony = get_telephony(device)
+
+    cellular = parse_cellular(
+        telephony
+    )
 
     return {
+
         "serial": device,
-        "model": model,
-        "android": android,
-        "operator": operator,
-        "network": network,
+
+        "model": get_model(device),
+
+        "android": get_android(device),
+
+        "operator": get_operator(device),
+
+        "network": get_network(device),
+
+        "private_ip": get_private_ip(device),
+
         "battery": battery,
+
         "temperature": temperature,
+
         "charging": charging,
-        "private_ip": private_ip,
-        "public_ip": public_ip,
-        "rx": rx,
-        "tx": tx
+
+        "rx": traffic_rx,
+
+        "tx": traffic_tx,
+
+        "rsrp": cellular["rsrp"],
+
+        "rsrq": cellular["rsrq"],
+
+        "rssnr": cellular["rssnr"],
+
+        "cqi": cellular["cqi"],
+
+        "band": cellular["band"],
+
+        "earfcn": cellular["earfcn"],
+
+        "pci": cellular["pci"],
+
+        "ca": cellular["ca"]
+
     }
 
+
 def print_device(data):
+
     print()
-    print("=" * 65)
+    print("=" * 70)
 
-    print(f"Device       : {data['model']}")
-    print(f"Serial       : {data['serial']}")
-    print(f"Android      : {data['android']}")
+    print(
+        f"{data['model']} "
+        f"({data['serial']})"
+    )
 
-    print("-" * 65)
+    print("-" * 70)
 
-    print(f"Operator     : {data['operator']}")
-    print(f"Network      : {data['network']}")
-    print(f"Private IP   : {data['private_ip']}")
-    print(f"Public IP    : {data['public_ip']}")
+    print(
+        f"Android      : {data['android']}"
+    )
 
-    print("-" * 65)
+    print(
+        f"Operator     : {data['operator']}"
+    )
 
-    print(f"Battery      : {data['battery']}%")
-    print(f"Temperature  : {data['temperature']} °C")
-    print(f"Power        : {data['charging']}")
+    print(
+        f"Network      : {data['network']}"
+    )
 
-    print("-" * 65)
+    print(
+        f"Private IP   : {data['private_ip']}"
+    )
 
-    print(f"RX           : {format_bytes(data['rx'])}")
-    print(f"TX           : {format_bytes(data['tx'])}")
+    print("-" * 70)
 
-    print("=" * 65)
+    print(
+        f"RSRP         : "
+        f"{data['rsrp']} dBm"
+    )
+
+    print(
+        f"RSRQ         : "
+        f"{data['rsrq']} dB"
+    )
+
+    print(
+        f"RSSNR        : "
+        f"{data['rssnr']} dB"
+    )
+
+    print(
+        f"CQI          : "
+        f"{data['cqi']}"
+    )
+
+    print(
+        f"Band         : "
+        f"{data['band']}"
+    )
+
+    print(
+        f"EARFCN       : "
+        f"{data['earfcn']}"
+    )
+
+    print(
+        f"PCI          : "
+        f"{data['pci']}"
+    )
+
+    print(
+        f"Carrier Agg. : "
+        f"{data['ca']}"
+    )
+
+    print("-" * 70)
+
+    print(
+        f"Battery      : "
+        f"{data['battery']}%"
+    )
+
+    print(
+        f"Temperature  : "
+        f"{data['temperature']} °C"
+    )
+
+    print(
+        f"Power        : "
+        f"{data['charging']}"
+    )
+
+    print("-" * 70)
+
+    print(
+        f"RX           : "
+        f"{format_bytes(data['rx'])}"
+    )
+
+    print(
+        f"TX           : "
+        f"{format_bytes(data['tx'])}"
+    )
+
+    print("=" * 70)
 
 
 def main():
 
-    print("Android Cluster Monitor")
-    print("=======================")
-    print(f"Sampling interval: {INTERVAL} seconds")
-    print("Press Ctrl+C to stop.\n")
+    print(
+        "Android Cluster Monitor"
+    )
+
+    print(
+        "======================="
+    )
+
+    print(
+        f"Sampling interval: "
+        f"{INTERVAL} seconds"
+    )
+
+    print(
+        "Press Ctrl+C to stop."
+    )
 
     while True:
 
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         devices = get_devices()
 
-        print("\n" + "#" * 65)
-        print(f"Timestamp: {timestamp}")
-        print(f"ADB devices: {len(devices)}")
-        print("#" * 65)
+        print()
+        print("#" * 70)
+
+        print(
+            f"Timestamp: {timestamp}"
+        )
+
+        print(
+            f"ADB devices: {len(devices)}"
+        )
+
+        print("#" * 70)
 
         if not devices:
-            print("No Android devices connected.")
+
+            print(
+                "No Android devices connected."
+            )
 
         for device in devices:
 
             try:
+
                 data = collect(device)
+
                 print_device(data)
 
             except Exception as e:
-                print(f"\nERROR collecting {device}: {e}")
+
+                print(
+                    f"ERROR: {device}: {e}"
+                )
 
         time.sleep(INTERVAL)
 
 
 if __name__ == "__main__":
+
     main()
