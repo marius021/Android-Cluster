@@ -786,10 +786,13 @@ def get_cellular_info(
             output
         )
 
-        # Android 6 / old Samsung devices:
-        # Carrier aggregation status is not considered
-        # reliable enough for monitoring.
-        info["ca"] = None
+    if info["ca"] is None:
+
+        info["ca"] = (
+            get_carrier_aggregation_prop(
+                serial
+            )
+        )
 
     return info
 
