@@ -1,0 +1,29 @@
+Experiment ID: H2_S5_HONEYGAIN_7D
+Phone: Samsung Galaxy S5 Neo SM-G903F
+ADB serial: 52000a84b2b21305
+SIM: Orange Romania
+Network: LTE
+Honeygain configuration: Standard bandwidth sharing
+Content Delivery: OFF
+VPN/proxy: NONE
+Monitoring interval: 30 seconds
+
+START DATE/TIME:
+YYYY-MM-DD HH:MM:SS
+
+HONEYGAIN STARTING CREDITS:
+XXXXXXXX
+
+HONEYGAIN STARTING USD BALANCE:
+$X.XX
+
+ORANGE PLAN:
+5 EUR recurring refill
+
+PHONE BATTERY:
+XX%
+
+PHONE TEMPERATURE:
+XX.X C
+
+NOTES:

@@ -1,0 +1,127 @@
+{
+  "experiment": "H1_S5_HONEYGAIN_72H",
+  "device": {
+    "serial": "52000a84b2b21305",
+    "model": "Samsung S5 Neo"
+  },
+  "measurement_period": {
+    "first": "2026-09-21 21:10:41",
+    "last": "2026-09-24 21:49:17",
+    "duration_hours": 72.64333333333333,
+    "duration_days": 3.0268055555555557,
+    "samples": 8603,
+    "expected_from_span": 8718,
+    "sample_ratio": 0.986808901124111
+  },
+  "data_quality": {
+    "valid_traffic_measurements": 8602,
+    "traffic_missing": 1,
+    "gaps_over_120s": 0,
+    "collection_errors": 0,
+    "event_counts": {
+      "ADB_CONNECTED": 2,
+      "ADB_DISCONNECTED": 1,
+      "MONITOR_STARTED": 1,
+      "MONITOR_STOPPED": 1
+    }
+  },
+  "traffic": {
+    "rx_mib": 2184.7814531326294,
+    "tx_mib": 1851.2993831634521,
+    "total_mib": 4036.0808362960815,
+    "total_gib": 3.941485191695392,
+    "mib_per_hour": 55.56023727292362,
+    "gib_per_day": 1.3021930610841472
+  },
+  "temperature_c": {
+    "min": 20.4,
+    "avg": 24.875206323375565,
+    "max": 31.7
+  },
+  "rsrp_dbm": {
+    "min": -110.0,
+    "avg": -100.84551900499825,
+    "max": -93.0
+  },
+  "rsrq_db": {
+    "min": -18.0,
+    "avg": -9.520051144949436,
+    "max": -6.0
+  },
+  "gaps_over_120s": [],
+  "events": {
+    "collection_errors": [],
+    "adb_disconnects": [
+      {
+        "timestamp": "2026-09-22 17:29:34",
+        "event_type": "ADB_DISCONNECTED",
+        "serial": "52000a84b2b21305",
+        "experiment_id": "H1_S5_HONEYGAIN_72H",
+        "old_value": null,
+        "new_value": null,
+        "details": null
+      }
+    ],
+    "adb_connects": [
+      {
+        "timestamp": "2026-09-21 21:10:41",
+        "event_type": "ADB_CONNECTED",
+        "serial": "52000a84b2b21305",
+        "experiment_id": "H1_S5_HONEYGAIN_72H",
+        "old_value": null,
+        "new_value": null,
+        "details": null
+      },
+      {
+        "timestamp": "2026-09-22 17:30:04",
+        "event_type": "ADB_CONNECTED",
+        "serial": "52000a84b2b21305",
+        "experiment_id": "H1_S5_HONEYGAIN_72H",
+        "old_value": null,
+        "new_value": null,
+        "details": null
+      }
+    ]
+  },
+  "honeygain": {
+    "note": "Daily values are not exact H1 revenue because H1 starts/ends part-way through calendar days.",
+    "daily_rows": [
+      {
+        "date": "2026-09-21",
+        "credits": 86.73,
+        "usd": 0.08
+      },
+      {
+        "date": "2026-09-22",
+        "credits": 72.21,
+        "usd": 0.07
+      },
+      {
+        "date": "2026-09-23",
+        "credits": 74.53,
+        "usd": 0.07
+      },
+      {
+        "date": "2026-09-24",
+        "credits": 74.76,
+        "usd": 0.07
+      }
+    ],
+    "full_calendar_days_inside_h1": [
+      {
+        "date": "2026-09-22",
+        "credits": 72.21,
+        "usd": 0.07
+      },
+      {
+        "date": "2026-09-23",
+        "credits": 74.53,
+        "usd": 0.07
+      }
+    ],
+    "full_day_credits": 146.74,
+    "full_day_usd": 0.14,
+    "overlapping_daily_credits_not_h1_revenue": 308.23,
+    "overlapping_daily_usd_not_h1_revenue": 0.29000000000000004
+  }
+}

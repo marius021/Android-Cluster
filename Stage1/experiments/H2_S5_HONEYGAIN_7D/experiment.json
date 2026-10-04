@@ -1,0 +1,25 @@
+{
+  "experiment_id": "H2_S5_HONEYGAIN_7D",
+  "objective": "Seven-day validation of Honeygain earnings relative to total cellular traffic",
+  "device": {
+    "model": "Samsung Galaxy S5 Neo",
+    "model_number": "SM-G903F",
+    "serial": "52000a84b2b21305",
+    "android": "6.0.1"
+  },
+  "network": {
+    "operator": "Orange Romania",
+    "access": "LTE"
+  },
+  "honeygain": {
+    "content_delivery": false,
+    "vpn_or_proxy": false
+  },
+  "monitoring": {
+    "poll_interval_seconds": 30
+  },
+  "target_duration_hours": 168,
+  "mobile_plan": {
+    "recurring_cost_eur": 5.0
+  }
+}
