@@ -1,0 +1,4 @@
+timestamp,experiment_id,serial,event_type,old_value,new_value,details
+2026-10-04 21:37:22,H2_S5_HONEYGAIN_7D,,MONITOR_STARTED,,,Experiment=H2_S5_HONEYGAIN_7D; poll_interval=30s
+2026-10-04 21:37:26,H2_S5_HONEYGAIN_7D,52000a84b2b21305,ADB_CONNECTED,,,
+2026-10-11 22:30:58,H2_S5_HONEYGAIN_7D,,MONITOR_STOPPED,,,Experiment=H2_S5_HONEYGAIN_7D
